@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use serde_json;
 use serde_json::Value;
 
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Event {
     pub sender: String,
@@ -20,7 +19,6 @@ pub struct Event {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Hash(#[serde(with = "serialize_hash")] Vec<u8>);
-
 
 mod serialize_hash {
     use base64;
