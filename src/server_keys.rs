@@ -3,10 +3,7 @@ use std::collections::BTreeMap;
 use chrono::{self, Timelike};
 use sodiumoxide::crypto::sign::PublicKey;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct TlsFingerprint {
-    pub sha256: String,
-}
+use ser::NamedHash;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct VerifyKey {
@@ -17,7 +14,7 @@ pub struct VerifyKey {
 #[derive(Debug, Clone, Serialize, Deserialize, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct KeyApiResponse {
     server_name: String,
-    tls_fingerprints: Vec<TlsFingerprint>,
+    tls_fingerprints: Vec<NamedHash>,
     valid_until_ts: u64,
     verify_keys: BTreeMap<String, VerifyKey>,
     old_verify_keys: BTreeMap<String, VerifyKey>,

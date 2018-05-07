@@ -1,9 +1,31 @@
-use std::ops::{Index, RangeFull};
-
 use sodiumoxide::crypto::sign::{PublicKey, Signature};
 
-pub trait SliceConvert: Index<RangeFull, Output = [u8]> + Sized {
+use sha2::{Digest, Sha256};
+
+#[derive(Debug, Clone, Serialize, Deserialize, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub enum NamedHash {
+    #[serde(rename = "sha256")]
+    Sha256(#[serde(with = "::ser::serialize_base64")] [u8; 32]),
+}
+
+impl NamedHash {
+    pub fn create_sha256(s: &[u8]) -> NamedHash {
+        let b = Sha256::digest(s);
+        let mut a = [0; 32];
+        a.copy_from_slice(&b);
+        NamedHash::Sha256(a)
+    }
+
+    pub fn matches(&self, s: &[u8]) -> bool {
+        match *self {
+            NamedHash::Sha256(ref h) => &Sha256::digest(s)[..] == h,
+        }
+    }
+}
+
+pub trait SliceConvert: Sized {
     fn from_slice(s: &[u8]) -> Option<Self>;
+    fn as_slice(&self) -> &[u8];
 }
 
 /// Helper module for (de)serializing objects as base64 slices.
@@ -19,7 +41,7 @@ pub mod serialize_base64 {
         S: serde::Serializer,
     {
         serializer.serialize_str(&base64::encode_config(
-            &signature[..],
+            signature.as_slice(),
             base64::STANDARD_NO_PAD,
         ))
     }
@@ -42,10 +64,34 @@ impl SliceConvert for Signature {
     fn from_slice(s: &[u8]) -> Option<Self> {
         Signature::from_slice(s)
     }
+
+    fn as_slice(&self) -> &[u8] {
+        &self[..]
+    }
 }
 
 impl SliceConvert for PublicKey {
     fn from_slice(s: &[u8]) -> Option<Self> {
         PublicKey::from_slice(s)
+    }
+
+    fn as_slice(&self) -> &[u8] {
+        &self[..]
+    }
+}
+
+impl SliceConvert for [u8; 32] {
+    fn from_slice(s: &[u8]) -> Option<Self> {
+        if s.len() == 32 {
+            let mut a = [0; 32];
+            a.copy_from_slice(s);
+            Some(a)
+        } else {
+            None
+        }
+    }
+
+    fn as_slice(&self) -> &[u8] {
+        self
     }
 }
