@@ -16,7 +16,7 @@ use {Event, EventBase, get_domain_from_id};
 pub fn check<E, S>(event: &E, auth_events: &StateMap<S>) -> Result<(), Error>
 where
     E: EventBase,
-    S: Borrow<EventBase> + Clone + fmt::Debug,
+    S: EventBase + Clone + fmt::Debug,
 {
     // TODO: Sig checks, can federate, size checks.
 
@@ -77,7 +77,7 @@ fn check_third_party_invite<E, S>(
 ) -> Result<(), Error>
 where
     E: EventBase,
-    S: Borrow<EventBase> + Clone + fmt::Debug,
+    S: EventBase + Clone + fmt::Debug,
 {
     let user_level = get_user_power_level(event.get_sender(), auth_events);
     let invite_level = get_named_level("invite", auth_events).unwrap_or(0);
@@ -95,7 +95,7 @@ fn check_membership<E, S>(
 ) -> Result<(), Error>
 where
     E: EventBase,
-    S: Borrow<EventBase> + Clone + fmt::Debug,
+    S: EventBase + Clone + fmt::Debug,
 {
     let membership = event.get_content()["membership"]
         .as_str()
@@ -239,7 +239,7 @@ fn check_user_in_room<E, S>(
 ) -> Result<(), Error>
 where
     E: EventBase,
-    S: Borrow<EventBase> + Clone + fmt::Debug,
+    S: EventBase + Clone + fmt::Debug,
 {
     let m = auth_events
         .get("m.room.member", event.get_sender())
@@ -259,7 +259,7 @@ fn check_can_send_event<E, S>(
 ) -> Result<(), Error>
 where
     E: EventBase,
-    S: Borrow<EventBase> + Clone + fmt::Debug,
+    S: EventBase + Clone + fmt::Debug,
 {
     let send_level = get_send_level(event.get_type(), event.get_state_key().is_some(), auth_events);
     let user_level = get_user_power_level(event.get_sender(), auth_events);
@@ -283,7 +283,7 @@ fn check_power_levels<E, S>(
 ) -> Result<(), Error>
 where
     E: EventBase,
-    S: Borrow<EventBase> + Clone + fmt::Debug,
+    S: EventBase + Clone + fmt::Debug,
 {
     let current_power = if let Some(ev) = auth_events.get("m.room.power_levels", "") {
         ev
@@ -421,7 +421,7 @@ fn check_redaction<E, S>(
 ) -> Result<(), Error>
 where
     E: EventBase,
-    S: Borrow<EventBase> + Clone + fmt::Debug,
+    S: EventBase + Clone + fmt::Debug,
 {
     let user_level = get_user_power_level(event.get_sender(), auth_events);
     let redact_level = get_named_level("redact", auth_events).unwrap_or(50);
@@ -445,7 +445,7 @@ fn verify_third_party_invite<E, S>(
 ) -> Result<(), Error>
 where
     E: EventBase,
-    S: Borrow<EventBase> + Clone + fmt::Debug,
+    S: EventBase + Clone + fmt::Debug,
 {
     let third_party = event
         .get_content()
@@ -476,7 +476,7 @@ where
     Ok(())
 }
 
-fn get_user_power_level<S: Borrow<EventBase> + Clone + fmt::Debug>(
+fn get_user_power_level<S: EventBase + Clone + fmt::Debug>(
     user: &str,
     auth_events: &StateMap<S>,
 ) -> i64 {
@@ -505,7 +505,7 @@ fn get_user_power_level<S: Borrow<EventBase> + Clone + fmt::Debug>(
     }
 }
 
-fn get_named_level<S: Borrow<EventBase> + Clone + fmt::Debug>(
+fn get_named_level<S: EventBase + Clone + fmt::Debug>(
     name: &str,
     auth_events: &StateMap<S>,
 ) -> Option<i64> {
@@ -515,7 +515,7 @@ fn get_named_level<S: Borrow<EventBase> + Clone + fmt::Debug>(
         .and_then(as_int)
 }
 
-fn get_send_level<S: Borrow<EventBase> + Clone + fmt::Debug>(
+fn get_send_level<S: EventBase + Clone + fmt::Debug>(
     etype: &str,
     is_state: bool,
     auth_events: &StateMap<S>,

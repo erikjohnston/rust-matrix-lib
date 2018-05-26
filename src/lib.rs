@@ -6,13 +6,17 @@ extern crate serde_json;
 #[macro_use]
 extern crate failure;
 extern crate chrono;
+extern crate sha1;
 extern crate sha2;
 extern crate sodiumoxide;
+extern crate smallvec;
+
 
 pub mod auth;
 mod event;
 pub mod ser;
 pub mod server_keys;
+pub mod state;
 pub mod state_map;
 
 pub use event::{Event, EventBase};

@@ -14,6 +14,8 @@ pub struct Event {
     pub prev_events: Vec<(String, NamedHash)>,
     pub redacts: Option<String>,
 
+    pub depth: u64,
+
     pub content: serde_json::Map<String, Value>,
 }
 
@@ -60,5 +62,34 @@ impl EventBase for Event {
 
     fn get_content(&self) -> &serde_json::Map<String, Value> {
         &self.content
+    }
+}
+
+impl<'a, E> EventBase for &'a E where E: EventBase {
+    fn get_room_id(&self) -> &str {
+        (*self).get_room_id()
+    }
+    fn get_event_id(&self) -> &str {
+        (*self).get_event_id()
+    }
+    fn get_sender(&self) -> &str {
+        (*self).get_sender()
+    }
+    fn get_type(&self) -> &str {
+        (*self).get_type()
+    }
+    fn get_state_key(&self) -> Option<&str> {
+        (*self).get_state_key()
+    }
+
+    fn get_redacts(&self) -> Option<&str> {
+        (*self).get_redacts()
+    }
+    fn get_single_prev_event_id(&self) -> Option<&str> {
+        (*self).get_single_prev_event_id()
+    }
+
+    fn get_content(&self) -> &serde_json::Map<String, Value> {
+        (*self).get_content()
     }
 }
