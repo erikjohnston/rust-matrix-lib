@@ -301,7 +301,11 @@ impl<E> StateMap<E>
 where
     E: Debug + Clone + PartialEq,
 {
-    pub fn add_or_remove(&mut self, t: &str, s: &str, value: &E) -> Option<E> {
+    pub fn add_or_remove<F>(&mut self, t: &str, s: &str, v: F) -> Option<E>
+    where
+        F: Borrow<E>,
+    {
+        let value = v.borrow();
         if s == "" {
             if let Some(key) = WellKnownEmptyKeys::from_str(t) {
                 match self.well_known.entry(key) {
@@ -435,7 +439,7 @@ fn add_or_remove_test() {
         state_map.insert(t, s, 1);
 
         let res = state_map.add_or_remove(t, s, 2);
-        assert_eq!(res, Some((2, 1)));
+        assert_eq!(res, Some(1));
 
         assert_eq!(state_map.get(t, s), None);
 

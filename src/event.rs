@@ -16,3 +16,49 @@ pub struct Event {
 
     pub content: serde_json::Map<String, Value>,
 }
+
+pub trait EventBase {
+    fn get_room_id(&self) -> &str;
+    fn get_event_id(&self) -> &str;
+    fn get_sender(&self) -> &str;
+    fn get_type(&self) -> &str;
+    fn get_state_key(&self) -> Option<&str>;
+
+    fn get_redacts(&self) -> Option<&str>;
+    fn get_single_prev_event_id(&self) -> Option<&str>;
+
+    fn get_content(&self) -> &serde_json::Map<String, Value>;
+}
+
+impl EventBase for Event {
+    fn get_room_id(&self) -> &str {
+        &self.room_id
+    }
+    fn get_event_id(&self) -> &str {
+        &self.event_id
+    }
+    fn get_sender(&self) -> &str {
+        &self.sender
+    }
+    fn get_type(&self) -> &str {
+        &self.etype
+    }
+    fn get_state_key(&self) -> Option<&str> {
+        self.state_key.as_ref().map(|s| s as &str)
+    }
+
+    fn get_redacts(&self) -> Option<&str> {
+        self.redacts.as_ref().map(|s| s as &str)
+    }
+    fn get_single_prev_event_id(&self) -> Option<&str> {
+        if self.prev_events.len() == 1 {
+            Some(&self.prev_events[0].0)
+        } else {
+            None
+        }
+    }
+
+    fn get_content(&self) -> &serde_json::Map<String, Value> {
+        &self.content
+    }
+}
