@@ -8,9 +8,9 @@ extern crate failure;
 extern crate chrono;
 extern crate sha1;
 extern crate sha2;
-extern crate sodiumoxide;
 extern crate smallvec;
-
+extern crate sodiumoxide;
+extern crate string_cache;
 
 pub mod auth;
 mod event;
@@ -22,7 +22,6 @@ pub mod state_map;
 pub use event::{Event, EventBase};
 
 use failure::Error;
-
 
 pub fn get_domain_from_id(string: &str) -> Result<&str, Error> {
     string

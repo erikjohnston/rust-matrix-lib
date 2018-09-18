@@ -3,6 +3,8 @@ use std::collections::{hash_map, HashMap};
 use std::fmt::Debug;
 use std::iter::FromIterator;
 
+use string_cache::DefaultAtom as Atom;
+
 const TYPE_CREATE: &str = "m.room.create";
 const TYPE_POWER_LEVELS: &str = "m.room.power_levels";
 const TYPE_JOIN_RULES: &str = "m.room.join_rules";
@@ -75,10 +77,10 @@ impl WellKnownEmptyKeys {
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct StateMap<E: Debug + Clone> {
     well_known: HashMap<WellKnownEmptyKeys, E>,
-    membership: HashMap<String, E>,
-    aliases: HashMap<String, E>,
-    invites: HashMap<String, E>,
-    others: HashMap<String, HashMap<String, E>>,
+    membership: HashMap<Atom, E>,
+    aliases: HashMap<Atom, E>,
+    invites: HashMap<Atom, E>,
+    others: HashMap<Atom, HashMap<Atom, E>>,
 }
 
 impl<E> StateMap<E>
@@ -100,15 +102,15 @@ where
     }
 
     pub fn get_aliases(&self, server: &str) -> Option<&E> {
-        self.aliases.get(server)
+        self.aliases.get(&server.into())
     }
 
     pub fn get_membership(&self, server: &str) -> Option<&E> {
-        self.membership.get(server)
+        self.membership.get(&server.into())
     }
 
     pub fn get_third_party_invites(&self, token: &str) -> Option<&E> {
-        self.invites.get(token)
+        self.invites.get(&token.into())
     }
 
     pub fn get(&self, t: &str, s: &str) -> Option<&E> {
@@ -123,7 +125,7 @@ where
             (TYPE_ALIASES, server) => self.get_aliases(server),
             (TYPE_THIRD_PARTY_INVITE, token) => self.get_third_party_invites(token),
 
-            (t, s) => self.others.get(t).and_then(|m| m.get(s)),
+            (t, s) => self.others.get(&t.into()).and_then(|m| m.get(&s.into())),
         }
     }
 
@@ -135,11 +137,14 @@ where
         }
 
         match (t.borrow(), s.borrow()) {
-            (TYPE_MEMBERSHIP, user) => self.membership.get_mut(user),
-            (TYPE_ALIASES, server) => self.aliases.get_mut(server),
-            (TYPE_THIRD_PARTY_INVITE, token) => self.invites.get_mut(token),
+            (TYPE_MEMBERSHIP, user) => self.membership.get_mut(&user.into()),
+            (TYPE_ALIASES, server) => self.aliases.get_mut(&server.into()),
+            (TYPE_THIRD_PARTY_INVITE, token) => self.invites.get_mut(&token.into()),
 
-            (t, s) => self.others.get_mut(t).and_then(|m| m.get_mut(s)),
+            (t, s) => self
+                .others
+                .get_mut(&t.into())
+                .and_then(|m| m.get_mut(&s.into())),
         }
     }
 
@@ -160,7 +165,8 @@ where
             (TYPE_ALIASES, server) => self.aliases.insert(server.into(), value),
             (TYPE_THIRD_PARTY_INVITE, token) => self.invites.insert(token.into(), value),
 
-            (t, s) => self.others
+            (t, s) => self
+                .others
                 .entry(t.into())
                 .or_insert_with(HashMap::new)
                 .insert(s.into(), value),
@@ -178,11 +184,13 @@ where
 
         let a = self.aliases.keys().map(|s| (TYPE_ALIASES, s as &str));
 
-        let i = self.invites
+        let i = self
+            .invites
             .keys()
             .map(|t| (TYPE_THIRD_PARTY_INVITE, t as &str));
 
-        let o = self.others
+        let o = self
+            .others
             .iter()
             .flat_map(|(t, h)| h.keys().map(move |s| (t as &str, s as &str)));
 
@@ -192,19 +200,23 @@ where
     pub fn iter(&self) -> impl Iterator<Item = ((&str, &str), &E)> {
         let w = self.well_known.iter().map(|(k, e)| ((k.as_str(), ""), e));
 
-        let m = self.membership
+        let m = self
+            .membership
             .iter()
             .map(|(u, e)| ((TYPE_MEMBERSHIP, u as &str), e));
 
-        let a = self.aliases
+        let a = self
+            .aliases
             .iter()
             .map(|(s, e)| ((TYPE_ALIASES, s as &str), e));
 
-        let i = self.invites
+        let i = self
+            .invites
             .iter()
             .map(|(t, e)| ((TYPE_THIRD_PARTY_INVITE, t as &str), e));
 
-        let o = self.others
+        let o = self
+            .others
             .iter()
             .flat_map(|(t, h)| h.iter().map(move |(s, e)| ((t as &str, s as &str), e)));
 
@@ -230,13 +242,15 @@ where
     }
 
     pub fn iter_join_rules(&self) -> impl Iterator<Item = (&str, &E)> {
-        let i = self.well_known
+        let i = self
+            .well_known
             .get(&WellKnownEmptyKeys::JoinRules)
             .into_iter()
             .map(|e| ("", e));
 
-        let o = self.others
-            .get(TYPE_JOIN_RULES)
+        let o = self
+            .others
+            .get(&TYPE_JOIN_RULES.into())
             .into_iter()
             .flat_map(|h| h.iter().map(move |(s, e)| (s as &str, e)));
 
@@ -246,15 +260,18 @@ where
     pub fn iter_non_members(&self) -> impl Iterator<Item = ((&str, &str), &E)> {
         let w = self.well_known.iter().map(|(k, e)| ((k.as_str(), ""), e));
 
-        let a = self.aliases
+        let a = self
+            .aliases
             .iter()
             .map(|(s, e)| ((TYPE_ALIASES, s as &str), e));
 
-        let i = self.invites
+        let i = self
+            .invites
             .iter()
             .map(|(t, e)| ((TYPE_THIRD_PARTY_INVITE, t as &str), e));
 
-        let o = self.others
+        let o = self
+            .others
             .iter()
             .flat_map(|(t, h)| h.iter().map(move |(s, e)| ((t as &str, s as &str), e)));
 
@@ -263,7 +280,10 @@ where
 
     pub fn len(&self) -> usize {
         let others: usize = self.others.values().map(|x| x.len()).sum();
-        self.well_known.len() + self.membership.len() + self.aliases.len() + self.invites.len()
+        self.well_known.len()
+            + self.membership.len()
+            + self.aliases.len()
+            + self.invites.len()
             + others
     }
 }
