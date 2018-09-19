@@ -160,7 +160,8 @@ where
             (TYPE_ALIASES, server) => self.aliases.insert(server.into(), value),
             (TYPE_THIRD_PARTY_INVITE, token) => self.invites.insert(token.into(), value),
 
-            (t, s) => self.others
+            (t, s) => self
+                .others
                 .entry(t.into())
                 .or_insert_with(HashMap::new)
                 .insert(s.into(), value),
@@ -178,11 +179,13 @@ where
 
         let a = self.aliases.keys().map(|s| (TYPE_ALIASES, s as &str));
 
-        let i = self.invites
+        let i = self
+            .invites
             .keys()
             .map(|t| (TYPE_THIRD_PARTY_INVITE, t as &str));
 
-        let o = self.others
+        let o = self
+            .others
             .iter()
             .flat_map(|(t, h)| h.keys().map(move |s| (t as &str, s as &str)));
 
@@ -192,19 +195,23 @@ where
     pub fn iter(&self) -> impl Iterator<Item = ((&str, &str), &E)> {
         let w = self.well_known.iter().map(|(k, e)| ((k.as_str(), ""), e));
 
-        let m = self.membership
+        let m = self
+            .membership
             .iter()
             .map(|(u, e)| ((TYPE_MEMBERSHIP, u as &str), e));
 
-        let a = self.aliases
+        let a = self
+            .aliases
             .iter()
             .map(|(s, e)| ((TYPE_ALIASES, s as &str), e));
 
-        let i = self.invites
+        let i = self
+            .invites
             .iter()
             .map(|(t, e)| ((TYPE_THIRD_PARTY_INVITE, t as &str), e));
 
-        let o = self.others
+        let o = self
+            .others
             .iter()
             .flat_map(|(t, h)| h.iter().map(move |(s, e)| ((t as &str, s as &str), e)));
 
@@ -230,12 +237,14 @@ where
     }
 
     pub fn iter_join_rules(&self) -> impl Iterator<Item = (&str, &E)> {
-        let i = self.well_known
+        let i = self
+            .well_known
             .get(&WellKnownEmptyKeys::JoinRules)
             .into_iter()
             .map(|e| ("", e));
 
-        let o = self.others
+        let o = self
+            .others
             .get(TYPE_JOIN_RULES)
             .into_iter()
             .flat_map(|h| h.iter().map(move |(s, e)| (s as &str, e)));
@@ -246,15 +255,18 @@ where
     pub fn iter_non_members(&self) -> impl Iterator<Item = ((&str, &str), &E)> {
         let w = self.well_known.iter().map(|(k, e)| ((k.as_str(), ""), e));
 
-        let a = self.aliases
+        let a = self
+            .aliases
             .iter()
             .map(|(s, e)| ((TYPE_ALIASES, s as &str), e));
 
-        let i = self.invites
+        let i = self
+            .invites
             .iter()
             .map(|(t, e)| ((TYPE_THIRD_PARTY_INVITE, t as &str), e));
 
-        let o = self.others
+        let o = self
+            .others
             .iter()
             .flat_map(|(t, h)| h.iter().map(move |(s, e)| ((t as &str, s as &str), e)));
 
@@ -263,7 +275,10 @@ where
 
     pub fn len(&self) -> usize {
         let others: usize = self.others.values().map(|x| x.len()).sum();
-        self.well_known.len() + self.membership.len() + self.aliases.len() + self.invites.len()
+        self.well_known.len()
+            + self.membership.len()
+            + self.aliases.len()
+            + self.invites.len()
             + others
     }
 }
