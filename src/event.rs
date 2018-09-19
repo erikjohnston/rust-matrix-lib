@@ -65,10 +65,7 @@ impl EventBase for Event {
     }
 }
 
-impl<'a, E> EventBase for &'a E
-where
-    E: EventBase,
-{
+impl<'a, E> EventBase for &'a E where E: EventBase {
     fn get_room_id(&self) -> &str {
         (*self).get_room_id()
     }

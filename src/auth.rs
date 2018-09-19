@@ -9,7 +9,8 @@ use failure::Error;
 
 use state_map::StateMap;
 
-use {get_domain_from_id, Event, EventBase};
+use {Event, EventBase, get_domain_from_id};
+
 
 /// Check if the given event parses auth.
 pub fn check<E, S>(event: &E, auth_events: &StateMap<S>) -> Result<(), Error>
@@ -70,7 +71,10 @@ where
     Ok(())
 }
 
-fn check_third_party_invite<E, S>(event: &E, auth_events: &StateMap<S>) -> Result<(), Error>
+fn check_third_party_invite<E, S>(
+    event: &E,
+    auth_events: &StateMap<S>,
+) -> Result<(), Error>
 where
     E: EventBase,
     S: EventBase + Clone + fmt::Debug,
@@ -85,7 +89,10 @@ where
     }
 }
 
-fn check_membership<E, S>(event: &E, auth_events: &StateMap<S>) -> Result<(), Error>
+fn check_membership<E, S>(
+    event: &E,
+    auth_events: &StateMap<S>,
+) -> Result<(), Error>
 where
     E: EventBase,
     S: EventBase + Clone + fmt::Debug,
@@ -119,7 +126,8 @@ where
 
     let (caller_in_room, caller_invited) =
         if let Some(ev) = auth_events.get("m.room.member", event.get_sender()) {
-            let m = ev.borrow().get_content()["membership"]
+            let m = ev.borrow()
+                .get_content()["membership"]
                 .as_str()
                 .ok_or_else(|| format_err!("missing membership key"))?;
             (m == "join", m == "invite")
@@ -129,7 +137,8 @@ where
 
     let (target_in_room, target_banned) =
         if let Some(ev) = auth_events.get("m.room.member", state_key) {
-            let m = ev.borrow().get_content()["membership"]
+            let m = ev.borrow()
+                .get_content()["membership"]
                 .as_str()
                 .ok_or_else(|| format_err!("missing membership key"))?;
             (m == "join", m == "ban")
@@ -224,7 +233,10 @@ where
     Ok(())
 }
 
-fn check_user_in_room<E, S>(event: &E, auth_events: &StateMap<S>) -> Result<(), Error>
+fn check_user_in_room<E, S>(
+    event: &E,
+    auth_events: &StateMap<S>,
+) -> Result<(), Error>
 where
     E: EventBase,
     S: EventBase + Clone + fmt::Debug,
@@ -241,16 +253,15 @@ where
     }
 }
 
-fn check_can_send_event<E, S>(event: &E, auth_events: &StateMap<S>) -> Result<(), Error>
+fn check_can_send_event<E, S>(
+    event: &E,
+    auth_events: &StateMap<S>,
+) -> Result<(), Error>
 where
     E: EventBase,
     S: EventBase + Clone + fmt::Debug,
 {
-    let send_level = get_send_level(
-        event.get_type(),
-        event.get_state_key().is_some(),
-        auth_events,
-    );
+    let send_level = get_send_level(event.get_type(), event.get_state_key().is_some(), auth_events);
     let user_level = get_user_power_level(event.get_sender(), auth_events);
 
     if user_level < send_level {
@@ -266,7 +277,10 @@ where
     Ok(())
 }
 
-fn check_power_levels<E, S>(event: &E, auth_events: &StateMap<S>) -> Result<(), Error>
+fn check_power_levels<E, S>(
+    event: &E,
+    auth_events: &StateMap<S>,
+) -> Result<(), Error>
 where
     E: EventBase,
     S: EventBase + Clone + fmt::Debug,
@@ -290,11 +304,7 @@ where
     ];
 
     for name in levels_to_check {
-        let old_level = current_power
-            .borrow()
-            .get_content()
-            .get(name)
-            .and_then(as_int);
+        let old_level = current_power.borrow().get_content().get(name).and_then(as_int);
         let new_level = event.get_content().get(name).and_then(as_int);
 
         if old_level == new_level {
@@ -405,7 +415,10 @@ where
     Ok(())
 }
 
-fn check_redaction<E, S>(event: &E, auth_events: &StateMap<S>) -> Result<(), Error>
+fn check_redaction<E, S>(
+    event: &E,
+    auth_events: &StateMap<S>,
+) -> Result<(), Error>
 where
     E: EventBase,
     S: EventBase + Clone + fmt::Debug,
@@ -426,7 +439,10 @@ where
     bail!("cannot redact");
 }
 
-fn verify_third_party_invite<E, S>(event: &E, auth_events: &StateMap<S>) -> Result<(), Error>
+fn verify_third_party_invite<E, S>(
+    event: &E,
+    auth_events: &StateMap<S>,
+) -> Result<(), Error>
 where
     E: EventBase,
     S: EventBase + Clone + fmt::Debug,
@@ -702,6 +718,7 @@ fn test_event_parse() {
 
     let _: Event = serde_json::from_str(&json).unwrap();
 }
+
 
 #[test]
 fn test_parse_number_like() {
